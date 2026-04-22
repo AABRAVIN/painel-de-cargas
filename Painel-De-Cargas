@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Gerenciador Logístico Pro - TRANSLIMA</title>
+    <style>
+        :root { 
+            --primary: #3498db; 
+            --danger: #e74c3c; 
+            --success: #27ae60; 
+            --bg: #f4f4f9; 
+            --highlight: #fff3cd; 
+            --done: #00FF00; 
+        }
+        
+        body, html { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); overflow: hidden; }
+        
+        .container { 
+            max-width: 950px; 
+            margin: 20px auto; 
+            background: white; 
+            padding: 20px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            display: flex; 
+            flex-direction: column;
+            height: 85vh; 
+        }
+        
+        h2 { margin-top: 0; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        #status-cloud { font-size: 12px; color: #888; font-weight: normal; }
+
+        .tabs { display: flex; gap: 5px; margin-bottom: 15px; background: #eee; padding: 5px; border-radius: 8px; flex-shrink: 0; }
+        .tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; border-radius: 6px; font-weight: bold; transition: 0.3s; color: #555; }
+        .tab.active { background: var(--primary); color: white; }
+
+        .list-container { 
+            flex-grow: 1; 
+            overflow-y: auto; 
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #f0f0f0;
+            border-radius: 6px;
+        }
+
+        .item-card { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: white; 
+            border: 1px solid #ddd; 
+            padding: 12px; 
+            margin-bottom: 10px; 
+            border-radius: 6px; 
+        }
+        
+        .item-card.completed { 
+            background-color: var(--done) !important; 
+            border-color: #00cc00; 
+        }
+        .item-card.completed .item-text { font-weight: bold; color: black; }
+
+        .item-text { flex-grow: 1; cursor: pointer; line-height: 1.5; font-size: 14px; color: #333; word-break: break-word; }
+        mark { background-color: var(--highlight); color: #856404; padding: 2px 4px; border-radius: 3px; font-weight: bold; }
+
+        .actions { display: flex; gap: 10px; align-items: center; margin-left: 15px; }
+        .check-done { width: 22px; height: 22px; cursor: pointer; margin-right: 12px; accent-color: var(--success); }
+
+        .btn-del { color: var(--danger); font-weight: bold; cursor: pointer; border: none; background: none; font-size: 22px; }
+        .btn-copy { background: var(--success); color: white; border: none; padding: 7px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
+
+        .footer-info { font-size: 0.85em; color: #777; margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; }
+        .fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 35px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; z-index: 100; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>
+        <span>📋 Painel de Cargas</span>
+        <span id="status-cloud">☁️ Conectando...</span>
+    </h2>
+    
+    <div class="tabs">
+        <div id="tab-pesos" class="tab active" onclick="switchTab('pesos')">Pesos/Cargas</div>
+        <div id="tab-cte" class="tab" onclick="switchTab('cte')">Regras CT-e</div>
+        <div id="tab-clientes" class="tab" onclick="switchTab('clientes')">Clientes</div>
+    </div>
+
+    <div id="list" class="list-container">Carregando dados da nuvem...</div>
+
+    <div class="footer-info">
+        💡 <b>Uso:</b> Digite no "+" para salvar. As mudanças aparecem para todos que usam o link.
+    </div>
+</div>
+
+<button class="fab" onclick="addItem()">+</button>
+
+<script>
+    // === CONFIGURAÇÃO DO BANCO (NPOINT) ===
+    const URL_BANCO = 'https://api.npoint.io/6ea9faedb26b428c233f';
+    let currentTab = 'pesos';
+    let data = { pesos: [], cte: [], clientes: [] };
+
+    // FUNÇÃO PARA BUSCAR DADOS NA NUVEM
+    async function loadFromCloud() {
+        try {
+            const res = await fetch(URL_BANCO);
+            const json = await res.json();
+            // Garante que a estrutura exista
+            data = {
+                pesos: json.pesos || [],
+                cte: json.cte || [],
+                clientes: json.clientes || []
+            };
+            document.getElementById('status-cloud').innerText = '✅ Sincronizado';
+            render();
+        } catch (e) {
+            document.getElementById('status-cloud').innerText = '❌ Erro de Conexão';
+        }
+    }
+
+    // FUNÇÃO PARA SALVAR NA NUVEM
+    async function saveToCloud() {
+        document.getElementById('status-cloud').innerText = '☁️ Salvando...';
+        try {
+            await fetch(URL_BANCO, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            document.getElementById('status-cloud').innerText = '✅ Salvo!';
+        } catch (e) {
+            alert("Erro ao salvar dados na nuvem!");
+        }
+    }
+
+    function formatText(text) {
+        return text ? text.replace(/\*(.*?)\*/g, '<mark>$1</mark>') : "";
+    }
+
+    function render() {
+        const listElement = document.getElementById('list');
+        listElement.innerHTML = '';
+        
+        if (data[currentTab].length === 0) {
+            listElement.innerHTML = '<p style="text-align:center; color:#999; margin-top:50px;">Aba vazia. Use o "+" para adicionar.</p>';
+        }
+
+        data[currentTab].forEach((item, index) => {
+            const textContent = item.t || "";
+            const isDone = item.d || false;
+
+            const card = document.createElement('div');
+            card.className = `item-card ${isDone ? 'completed' : ''}`;
+            
+            const checkBtn = currentTab === 'clientes' 
+                ? `<input type="checkbox" class="check-done" ${isDone ? 'checked' : ''} onclick="toggleDone(${index})">` 
+                : '';
+
+            card.innerHTML = `
+                ${checkBtn}
+                <div class="item-text" onclick="editItem(${index})">${formatText(textContent)}</div>
+                <div class="actions">
+                    <button class="btn-copy" onclick="copyText(this, ${index})">Copiar</button>
+                    <button class="btn-del" onclick="deleteItem(${index})">&times;</button>
+                </div>
+            `;
+            listElement.appendChild(card);
+        });
+    }
+
+    async function toggleDone(index) {
+        data[currentTab][index].d = !data[currentTab][index].d;
+        render();
+        await saveToCloud();
+    }
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('tab-' + tab).classList.add('active');
+        render();
+    }
+
+    async function addItem() {
+        const text = prompt("Digite a nova informação:");
+        if (text) {
+            data[currentTab].push({ t: text, d: false });
+            render();
+            await saveToCloud();
+        }
+    }
+
+    async function editItem(index) {
+        const oldText = data[currentTab][index].t;
+        const newText = prompt("Editar informação:", oldText);
+        if (newText !== null && newText !== "") {
+            data[currentTab][index].t = newText;
+            render();
+            await saveToCloud();
+        }
+    }
+
+    async function deleteItem(index) {
+        if (confirm("Deseja excluir permanentemente?")) {
+            data[currentTab].splice(index, 1);
+            render();
+            await saveToCloud();
+        }
+    }
+
+    function copyText(btn, index) {
+        const rawText = data[currentTab][index].t.replace(/\*/g, '');
+        navigator.clipboard.writeText(rawText).then(() => {
+            const originalText = btn.innerText;
+            btn.innerText = "COPIADO";
+            setTimeout(() => btn.innerText = originalText, 800);
+        });
+    }
+
+    // Inicia carregando os dados da nuvem
+    loadFromCloud();
+</script>
+
+</body>
+</html>
