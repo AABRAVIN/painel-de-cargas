@@ -218,7 +218,15 @@
         });
     }
 
+    // Carrega os dados assim que abre a página
+loadFromCloud();
+
+// ATUALIZAÇÃO AUTOMÁTICA: 
+// Faz o site buscar novidades no banco a cada 10 segundos
+setInterval(() => {
+    // Só atualiza sozinho se você NÃO estiver com um alerta (prompt) aberto
     loadFromCloud();
+}, 10000);
 </script>
 
 </body>
