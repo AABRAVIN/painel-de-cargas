@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Gerenciador Logístico Pro</title>
+    <style>
+        :root { 
+            --primary: #3498db; 
+            --danger: #e74c3c; 
+            --success: #27ae60; 
+            --bg: #f4f4f9; 
+            --highlight: #fff3cd; 
+            --done: #00FF00; /* Verde Neon igual ao da sua imagem */
+        }
+        
+        body, html { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); overflow: hidden; }
+        
+        .container { 
+            max-width: 950px; 
+            margin: 20px auto; 
+            background: white; 
+            padding: 20px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            display: flex; 
+            flex-direction: column;
+            height: 85vh; 
+        }
+        
+        h2 { margin-top: 0; flex-shrink: 0; display: flex; align-items: center; gap: 10px; }
+
+        .tabs { display: flex; gap: 5px; margin-bottom: 15px; background: #eee; padding: 5px; border-radius: 8px; flex-shrink: 0; }
+        .tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; border-radius: 6px; font-weight: bold; transition: 0.3s; color: #555; }
+        .tab.active { background: var(--primary); color: white; }
+
+        /* LISTA COM ROLAGEM */
+        .list-container { 
+            flex-grow: 1; 
+            overflow-y: auto; 
+            padding-right: 10px; 
+            border: 1px solid #f0f0f0;
+            border-radius: 6px;
+            padding: 10px;
+            background: #fff;
+        }
+
+        .list-container::-webkit-scrollbar { width: 10px; }
+        .list-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 5px; }
+        .list-container::-webkit-scrollbar-thumb { background: #ccc; border-radius: 5px; border: 2px solid #f1f1f1; }
+
+        .item-card { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: white; 
+            border: 1px solid #ddd; 
+            padding: 12px; 
+            margin-bottom: 10px; 
+            border-radius: 6px; 
+            transition: background 0.3s, border 0.3s;
+        }
+        
+        /* ESTILO PARA QUANDO TIVER PRONTO (VERDE NEON) */
+        .item-card.completed { 
+            background-color: var(--done) !important; 
+            border-color: #00cc00; 
+        }
+        .item-card.completed .item-text { 
+            font-weight: bold; 
+            color: black; 
+        }
+
+        .item-text { flex-grow: 1; cursor: pointer; line-height: 1.5; font-size: 14px; color: #333; word-break: break-word; }
+        
+        /* Marca-texto amarelo */
+        mark { background-color: var(--highlight); color: #856404; padding: 2px 4px; border-radius: 3px; font-weight: bold; }
+
+        .actions { display: flex; gap: 10px; align-items: center; margin-left: 15px; flex-shrink: 0; }
+        
+        /* Estilo da Caixinha de Seleção (Check) */
+        .check-done { 
+            width: 22px; 
+            height: 22px; 
+            cursor: pointer; 
+            margin-right: 12px; 
+            accent-color: var(--success);
+            flex-shrink: 0;
+        }
+
+        .btn-del { color: var(--danger); font-weight: bold; cursor: pointer; border: none; background: none; font-size: 22px; padding: 0 5px; }
+        .btn-copy { background: var(--success); color: white; border: none; padding: 7px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; min-width: 75px; }
+
+        .footer-info { font-size: 0.85em; color: #777; margin-top: 15px; flex-shrink: 0; border-top: 1px solid #eee; padding-top: 10px; }
+
+        .fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 35px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; z-index: 100; transition: 0.3s; }
+        .fab:hover { transform: scale(1.1); background: #2980b9; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📋 Painel de Cargas</h2>
+    
+    <div class="tabs">
+        <div id="tab-pesos" class="tab active" onclick="switchTab('pesos')">Pesos/Cargas</div>
+        <div id="tab-cte" class="tab" onclick="switchTab('cte')">Regras CT-e</div>
+        <div id="tab-clientes" class="tab" onclick="switchTab('clientes')">Clientes</div>
+    </div>
+
+    <div id="list" class="list-container"></div>
+
+    <div class="footer-info">
+        💡 <b>Dica:</b> Use *asteriscos* para marca-texto. Na aba Clientes, use a caixa para destacar o CT-e pronto em <b>Verde Neon</b>.
+    </div>
+</div>
+
+<button class="fab" title="Adicionar Novo Item" onclick="addItem()">+</button>
+
+<script>
+    let currentTab = 'pesos';
+    
+    // Puxa os dados antigos ou começa vazio
+    let data = JSON.parse(localStorage.getItem('logisticaData')) || { pesos: [], cte: [], clientes: [] };
+
+    function formatText(text) {
+        if (!text) return "";
+        return text.replace(/\*(.*?)\*/g, '<mark>$1</mark>');
+    }
+
+    function render() {
+        const listElement = document.getElementById('list');
+        listElement.innerHTML = '';
+        
+        if (data[currentTab].length === 0) {
+            listElement.innerHTML = '<p style="text-align:center; color:#999; margin-top:50px;">Aba vazia. Clique no "+" para inserir dados.</p>';
+        }
+
+        data[currentTab].forEach((item, index) => {
+            // Suporte para dados antigos (string) e novos (objeto)
+            const textContent = typeof item === 'object' ? item.t : item;
+            const isDone = typeof item === 'object' ? item.d : false;
+
+            const card = document.createElement('div');
+            card.className = `item-card ${isDone ? 'completed' : ''}`;
+            
+            // O botão de check só aparece na aba de Clientes
+            const checkBtn = currentTab === 'clientes' 
+                ? `<input type="checkbox" class="check-done" ${isDone ? 'checked' : ''} onclick="toggleDone(${index})">` 
+                : '';
+
+            card.innerHTML = `
+                ${checkBtn}
+                <div class="item-text" onclick="editItem(${index})">${formatText(textContent)}</div>
+                <div class="actions">
+                    <button class="btn-copy" onclick="copyText(this, ${index})">Copiar</button>
+                    <button class="btn-del" title="Excluir" onclick="deleteItem(${index})">&times;</button>
+                </div>
+            `;
+            listElement.appendChild(card);
+        });
+        localStorage.setItem('logisticaData', JSON.stringify(data));
+    }
+
+    // Função para ligar/desligar o verde neon
+    function toggleDone(index) {
+        if (typeof data[currentTab][index] !== 'object') {
+            data[currentTab][index] = { t: data[currentTab][index], d: true };
+        } else {
+            data[currentTab][index].d = !data[currentTab][index].d;
+        }
+        render();
+    }
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('tab-' + tab).classList.add('active');
+        render();
+    }
+
+    function addItem() {
+        const text = prompt("Digite a nova informação:");
+        if (text) {
+            data[currentTab].push({ t: text, d: false });
+            render();
+        }
+    }
+
+    function editItem(index) {
+        let oldText = typeof data[currentTab][index] === 'object' ? data[currentTab][index].t : data[currentTab][index];
+        const newText = prompt("Editar informação:", oldText);
+        if (newText !== null && newText !== "") {
+            if (typeof data[currentTab][index] === 'object') {
+                data[currentTab][index].t = newText;
+            } else {
+                data[currentTab][index] = { t: newText, d: false };
+            }
+            render();
+        }
+    }
+
+    function deleteItem(index) {
+        if (confirm("Tem certeza que deseja excluir?")) {
+            data[currentTab].splice(index, 1);
+            render();
+        }
+    }
+
+    function copyText(btn, index) {
+        let textToCopy = typeof data[currentTab][index] === 'object' ? data[currentTab][index].t : data[currentTab][index];
+        const rawText = textToCopy.replace(/\*/g, ''); // Remove os asteriscos ao copiar
+        
+        navigator.clipboard.writeText(rawText).then(() => {
+            const originalText = btn.innerText;
+            btn.innerText = "COPIADO";
+            btn.style.background = "#2ecc71";
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.background = "var(--success)";
+            }, 800);
+        });
+    }
+
+    // Inicializa o painel
+    render();
+</script>
+
+</body>
+</html>
