@@ -97,17 +97,15 @@
 <button class="fab" onclick="addItem()">+</button>
 
 <script>
-    // === CONFIGURAÇÃO DO BANCO (NPOINT) ===
     const URL_BANCO = 'https://api.npoint.io/6ea9faedb26b428c233f';
     let currentTab = 'pesos';
     let data = { pesos: [], cte: [], clientes: [] };
 
-    // FUNÇÃO PARA BUSCAR DADOS NA NUVEM
     async function loadFromCloud() {
         try {
-            const res = await fetch(URL_BANCO);
+            // "cache: no-store" força o celular a pegar a versão nova do banco
+            const res = await fetch(URL_BANCO, { cache: "no-store" });
             const json = await res.json();
-            // Garante que a estrutura exista
             data = {
                 pesos: json.pesos || [],
                 cte: json.cte || [],
@@ -120,18 +118,18 @@
         }
     }
 
-    // FUNÇÃO PARA SALVAR NA NUVEM
     async function saveToCloud() {
         document.getElementById('status-cloud').innerText = '☁️ Salvando...';
         try {
+            // Usando PUT para garantir a atualização no npoint
             await fetch(URL_BANCO, {
-                method: 'POST',
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
             document.getElementById('status-cloud').innerText = '✅ Salvo!';
         } catch (e) {
-            alert("Erro ao salvar dados na nuvem!");
+            document.getElementById('status-cloud').innerText = '❌ Erro ao salvar';
         }
     }
 
@@ -143,8 +141,9 @@
         const listElement = document.getElementById('list');
         listElement.innerHTML = '';
         
-        if (data[currentTab].length === 0) {
+        if (!data[currentTab] || data[currentTab].length === 0) {
             listElement.innerHTML = '<p style="text-align:center; color:#999; margin-top:50px;">Aba vazia. Use o "+" para adicionar.</p>';
+            return;
         }
 
         data[currentTab].forEach((item, index) => {
@@ -219,7 +218,6 @@
         });
     }
 
-    // Inicia carregando os dados da nuvem
     loadFromCloud();
 </script>
 
