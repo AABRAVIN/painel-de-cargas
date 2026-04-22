@@ -87,7 +87,7 @@
         <div id="tab-clientes" class="tab" onclick="switchTab('clientes')">Clientes</div>
     </div>
 
-    <div id="list" class="list-container">Carregando dados da nuvem...</div>
+    <div id="list" class="list-container">Carregando dados...</div>
 
     <div class="footer-info">
         💡 <b>Uso:</b> Digite no "+" para salvar. As mudanças aparecem para todos que usam o link.
@@ -97,22 +97,25 @@
 <button class="fab" onclick="addItem()">+</button>
 
 <script>
-    const URL_BANCO = 'https://api.npoint.io/6ea9faedb26b428c233f';
+    // === CONFIGURAÇÃO SUPABASE DA TRANSLIMA ===
+    const SB_URL = 'https://wzinlkuvktzpajkdgohq.supabase.co';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6aW5sa3V2a3R6cGFqa2Rnb2hxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4NzY0MDAsImV4cCI6MjA5MjQ1MjQwMH0.01SLd70weP8VqoZ9HWHcWRpkD74s_wBIhKhjKFaZ34k';
+    const URL_BANCO = `${SB_URL}/rest/v1/painel?id=eq.1`;
+
     let currentTab = 'pesos';
     let data = { pesos: [], cte: [], clientes: [] };
 
     async function loadFromCloud() {
         try {
-            // "cache: no-store" força o celular a pegar a versão nova do banco
-            const res = await fetch(URL_BANCO, { cache: "no-store" });
+            const res = await fetch(URL_BANCO, {
+                headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}` }
+            });
             const json = await res.json();
-            data = {
-                pesos: json.pesos || [],
-                cte: json.cte || [],
-                clientes: json.clientes || []
-            };
-            document.getElementById('status-cloud').innerText = '✅ Sincronizado';
-            render();
+            if (json && json.length > 0) {
+                data = json[0].dados;
+                document.getElementById('status-cloud').innerText = '✅ Sincronizado';
+                render();
+            }
         } catch (e) {
             document.getElementById('status-cloud').innerText = '❌ Erro de Conexão';
         }
@@ -121,11 +124,15 @@
     async function saveToCloud() {
         document.getElementById('status-cloud').innerText = '☁️ Salvando...';
         try {
-            // Usando PUT para garantir a atualização no npoint
             await fetch(URL_BANCO, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+                method: 'PATCH',
+                headers: {
+                    "apikey": SB_KEY,
+                    "Authorization": `Bearer ${SB_KEY}`,
+                    "Content-Type": "application/json",
+                    "Prefer": "return=minimal"
+                },
+                body: JSON.stringify({ dados: data })
             });
             document.getElementById('status-cloud').innerText = '✅ Salvo!';
         } catch (e) {
@@ -147,19 +154,16 @@
         }
 
         data[currentTab].forEach((item, index) => {
-            const textContent = item.t || "";
-            const isDone = item.d || false;
-
             const card = document.createElement('div');
-            card.className = `item-card ${isDone ? 'completed' : ''}`;
+            card.className = `item-card ${item.d ? 'completed' : ''}`;
             
             const checkBtn = currentTab === 'clientes' 
-                ? `<input type="checkbox" class="check-done" ${isDone ? 'checked' : ''} onclick="toggleDone(${index})">` 
+                ? `<input type="checkbox" class="check-done" ${item.d ? 'checked' : ''} onclick="toggleDone(${index})">` 
                 : '';
 
             card.innerHTML = `
                 ${checkBtn}
-                <div class="item-text" onclick="editItem(${index})">${formatText(textContent)}</div>
+                <div class="item-text" onclick="editItem(${index})">${formatText(item.t)}</div>
                 <div class="actions">
                     <button class="btn-copy" onclick="copyText(this, ${index})">Copiar</button>
                     <button class="btn-del" onclick="deleteItem(${index})">&times;</button>
@@ -218,7 +222,10 @@
         });
     }
 
+    // Início automático
     loadFromCloud();
+    // Atualiza sozinho a cada 10 segundos
+    setInterval(loadFromCloud, 10000);
 </script>
 
 </body>
