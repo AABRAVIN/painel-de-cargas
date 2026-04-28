@@ -157,7 +157,7 @@ function render() {
 
         const card = document.createElement('div');
 
-        card.className = `item-card ${item.d ? 'completed' : ''} ${item.nf ? 'invoiced' : ''}`;
+        card.className = `item-card ${item.d ? 'completed' : ''}`;
 
         const checkBtn = currentTab === 'clientes'
             ? `<input type="checkbox" class="check-done" ${item.d ? 'checked' : ''} onclick="toggleDone(${index})">`
@@ -168,15 +168,8 @@ function render() {
             <div class="item-text" onclick="editItem(${index})">${formatText(item.t)}</div>
 
             <div class="actions">
-
                 <button class="btn-copy" onclick="copyText(this, ${index})">Copiar</button>
-
-                <button class="btn-copy" onclick="toggleNF(${index})">
-                    ${item.nf ? 'NF OK' : 'NF'}
-                </button>
-
                 <button class="btn-del" onclick="deleteItem(${index})">&times;</button>
-
             </div>
         `;
 
@@ -255,7 +248,15 @@ async function deleteItem(index) {
 function formatText(text) {
     if (!text) return "";
 
-    return text.replace(/\*(.*?)\*/g, '<mark>$1</mark>');
+    // destaque padrão com *
+    text = text.replace(/\*(.*?)\*/g, '<mark>$1</mark>');
+
+    // destaque NF por fornecedor
+    text = text.replace(/\[NF:(.*?)\]/gi, (full, nome) => {
+        return `<span style="background:#d0ebff;padding:2px 6px;border-radius:4px;font-weight:bold">${nome}</span>`;
+    });
+
+    return text;
 }
 
 // =====================
