@@ -65,17 +65,36 @@ body, html { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; backg
 <script>
 
 const SB_URL = 'https://wzinlkuvktzpajkdgohq.supabase.co';
-const SB_KEY = 'SUA_KEY_AQUI';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
 const URL = `${SB_URL}/rest/v1/painel?id=eq.1`;
 
 let currentTab = 'pesos';
 let data = { pesos: [], cte: [], clientes: [] };
 
 // LOAD
-async function loadFromCloud(){
-    const res = await fetch(URL,{headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`}});
-    const json = await res.json();
-    if(json?.length){ data = json[0].dados; render(); }
+async function loadFromCloud() {
+    try {
+        const res = await fetch(URL_BANCO, {
+            headers: {
+                apikey: SB_KEY,
+                Authorization: `Bearer ${SB_KEY}`
+            }
+        });
+
+        const json = await res.json();
+
+        if (json?.length) {
+            data = json[0].dados;
+            document.getElementById('status-cloud').innerText = '✅ OK';
+            render();
+        } else {
+            document.getElementById('status-cloud').innerText = '⚠️ Vazio';
+        }
+
+    } catch (e) {
+        document.getElementById('status-cloud').innerText = '❌ Erro';
+        console.error(e);
+    }
 }
 
 // SAVE
