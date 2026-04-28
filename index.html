@@ -1,117 +1,119 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<title>Gerenciador Logístico Pro - TRANSLIMA</title>
+    <meta charset="UTF-8">
+    <title>Gerenciador Logístico Pro - TRANSLIMA</title>
 
-<style>
-:root { 
-    --primary: #3498db; 
-    --danger: #e74c3c; 
-    --success: #27ae60; 
-    --bg: #f4f4f9; 
-    --highlight: #fff3cd; 
-    --done: #00FF00; 
-}
+    <style>
+        :root { 
+            --primary: #3498db; 
+            --danger: #e74c3c; 
+            --success: #27ae60; 
+            --bg: #f4f4f9; 
+            --highlight: #fff3cd; 
+            --done: #00FF00; 
+        }
 
-body, html { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); overflow: hidden; }
+        body, html { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); overflow: hidden; }
 
-.container { 
-    max-width: 950px; 
-    margin: 20px auto; 
-    background: white; 
-    padding: 20px; 
-    border-radius: 12px; 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-    display: flex; 
-    flex-direction: column;
-    height: 85vh; 
-}
+        .container { 
+            max-width: 950px; 
+            margin: 20px auto; 
+            background: white; 
+            padding: 20px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            display: flex; 
+            flex-direction: column;
+            height: 85vh; 
+        }
 
-h2 { margin-top: 0; display: flex; justify-content: space-between; }
+        h2 { margin-top: 0; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 
-.tabs { display: flex; gap: 5px; margin-bottom: 15px; background: #eee; padding: 5px; border-radius: 8px; }
+        #status-cloud { font-size: 12px; color: #888; font-weight: normal; }
 
-.tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; border-radius: 6px; font-weight: bold; }
+        .tabs { display: flex; gap: 5px; margin-bottom: 15px; background: #eee; padding: 5px; border-radius: 8px; flex-shrink: 0; }
 
-.tab.active { background: var(--primary); color: white; }
+        .tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; border-radius: 6px; font-weight: bold; transition: 0.3s; color: #555; }
 
-.list-container { 
-    flex-grow: 1; 
-    overflow-y: auto; 
-    padding: 10px;
-    background: #fff;
-    border: 1px solid #f0f0f0;
-    border-radius: 6px;
-}
+        .tab.active { background: var(--primary); color: white; }
 
-.item-card { 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    border: 1px solid #ddd; 
-    padding: 12px; 
-    margin-bottom: 10px; 
-    border-radius: 6px; 
-}
+        .list-container { 
+            flex-grow: 1; 
+            overflow-y: auto; 
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #f0f0f0;
+            border-radius: 6px;
+        }
 
-.item-text { flex-grow: 1; cursor: pointer; }
+        .item-card { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: white; 
+            border: 1px solid #ddd; 
+            padding: 12px; 
+            margin-bottom: 10px; 
+            border-radius: 6px; 
+        }
 
-.actions { display: flex; gap: 10px; }
+        .item-card.completed { background-color: var(--done) !important; }
 
-.btn-del { color: red; border: none; background: none; font-size: 20px; cursor: pointer; }
+        .item-card.invoiced {
+            background: #d0ebff !important;
+            border-color: #74c0fc;
+        }
 
-.btn-copy { background: green; color: white; border: none; padding: 5px 10px; cursor: pointer; }
+        .item-text { flex-grow: 1; cursor: pointer; font-size: 14px; color: #333; word-break: break-word; }
 
-.add-btn {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: var(--primary);
-    color: white;
-    border: none;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    font-size: 28px;
-    cursor: pointer;
-}
-</style>
+        mark { background-color: var(--highlight); }
+
+        .actions { display: flex; gap: 10px; align-items: center; margin-left: 15px; }
+
+        .btn-del { color: var(--danger); font-weight: bold; cursor: pointer; border: none; background: none; font-size: 22px; }
+
+        .btn-copy { background: var(--success); color: white; border: none; padding: 7px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
+
+    </style>
 </head>
 
 <body>
 
 <div class="container">
 
-<h2>
-    <span>📋 Painel de Cargas</span>
-    <span id="status-cloud">☁️ Conectado</span>
-</h2>
+    <h2>
+        <span>📋 Painel de Cargas</span>
+        <span id="status-cloud">☁️ Conectando...</span>
+    </h2>
 
-<div class="tabs">
-    <div id="tab-pesos" class="tab active" onclick="switchTab('pesos')">Pesos</div>
-    <div id="tab-cte" class="tab" onclick="switchTab('cte')">CT-e</div>
-    <div id="tab-clientes" class="tab" onclick="switchTab('clientes')">Clientes</div>
+    <div class="tabs">
+        <div id="tab-pesos" class="tab active" onclick="switchTab('pesos')">Pesos/Cargas</div>
+        <div id="tab-cte" class="tab" onclick="switchTab('cte')">Regras CT-e</div>
+        <div id="tab-clientes" class="tab" onclick="switchTab('clientes')">Clientes</div>
+    </div>
+
+    <div id="list" class="list-container">Carregando dados...</div>
+
 </div>
 
-<div id="list" class="list-container"></div>
-
-</div>
-
-<button class="add-btn" onclick="addItem()">+</button>
+<button onclick="addItem()">+</button>
 
 <script>
 
-// ===== SUPABASE =====
+// =====================
+// CONFIG SUPABASE
+// =====================
 const SB_URL = 'https://wzinlkuvktzpajkdgohq.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6aW5sa3V2a3R6cGFqa2Rnb2hxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4NzY0MDAsImV4cCI6MjA5MjQ1MjQwMH0.01SLd70weP8VqoZ9HWHcWRpkD74s_wBIhKhjKFaZ34k';
-
 const URL_BANCO = `${SB_URL}/rest/v1/painel?id=eq.1`;
 
 let currentTab = 'pesos';
 let data = { pesos: [], cte: [], clientes: [] };
 
+// =====================
 // LOAD
+// =====================
 async function loadFromCloud() {
     const res = await fetch(URL_BANCO, {
         headers: {
@@ -121,14 +123,15 @@ async function loadFromCloud() {
     });
 
     const json = await res.json();
-
     if (json?.length) {
         data = json[0].dados;
         render();
     }
 }
 
+// =====================
 // SAVE
+// =====================
 async function saveToCloud() {
     await fetch(URL_BANCO, {
         method: 'PATCH',
@@ -141,28 +144,58 @@ async function saveToCloud() {
     });
 }
 
+// =====================
 // RENDER
+// =====================
 function render() {
-    const list = document.getElementById('list');
-    list.innerHTML = '';
+    const listElement = document.getElementById('list');
+    listElement.innerHTML = '';
 
-    data[currentTab].forEach((item, i) => {
-        const div = document.createElement('div');
-        div.className = 'item-card';
+    if (!data[currentTab]) return;
 
-        div.innerHTML = `
-            <div class="item-text" onclick="editItem(${i})">${item.t}</div>
+    data[currentTab].forEach((item, index) => {
+
+        const card = document.createElement('div');
+
+        card.className = `item-card ${item.d ? 'completed' : ''} ${item.nf ? 'invoiced' : ''}`;
+
+        const checkBtn = currentTab === 'clientes'
+            ? `<input type="checkbox" class="check-done" ${item.d ? 'checked' : ''} onclick="toggleDone(${index})">`
+            : '';
+
+        card.innerHTML = `
+            ${checkBtn}
+            <div class="item-text" onclick="editItem(${index})">${formatText(item.t)}</div>
+
             <div class="actions">
-                <button class="btn-copy" onclick="copyText(${i})">Copiar</button>
-                <button class="btn-del" onclick="deleteItem(${i})">x</button>
+
+                <button class="btn-copy" onclick="copyText(this, ${index})">Copiar</button>
+
+                <button class="btn-copy" onclick="toggleNF(${index})">
+                    ${item.nf ? 'NF OK' : 'NF'}
+                </button>
+
+                <button class="btn-del" onclick="deleteItem(${index})">&times;</button>
+
             </div>
         `;
 
-        list.appendChild(div);
+        listElement.appendChild(card);
     });
 }
 
+// =====================
+// TOGGLE DONE
+// =====================
+async function toggleDone(index) {
+    data[currentTab][index].d = !data[currentTab][index].d;
+    render();
+    await saveToCloud();
+}
+
+// =====================
 // TAB
+// =====================
 function switchTab(tab) {
     currentTab = tab;
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -170,44 +203,77 @@ function switchTab(tab) {
     render();
 }
 
+// =====================
+// NF
+// =====================
+async function toggleNF(index) {
+    data[currentTab][index].nf = !data[currentTab][index].nf;
+    render();
+    await saveToCloud();
+}
+
+// =====================
 // ADD
+// =====================
 async function addItem() {
-    let msg = "Digite:";
-    if(currentTab === 'clientes') msg = "Novo CLIENTE:";
-
-    const text = prompt(msg);
-    if (!text) return;
-
-    data[currentTab].push({ t: text });
-    render();
-    await saveToCloud();
+    const text = prompt("Digite a nova informação:");
+    if (text) {
+        data[currentTab].push({ t: text, d: false, nf: false });
+        render();
+        await saveToCloud();
+    }
 }
 
+// =====================
 // EDIT
-async function editItem(i) {
-    const t = prompt("Editar:", data[currentTab][i].t);
-    if (!t) return;
+// =====================
+async function editItem(index) {
+    const oldText = data[currentTab][index].t;
+    const newText = prompt("Editar informação:", oldText);
 
-    data[currentTab][i].t = t;
-    render();
-    await saveToCloud();
+    if (newText !== null && newText !== "") {
+        data[currentTab][index].t = newText;
+        render();
+        await saveToCloud();
+    }
 }
 
+// =====================
 // DELETE
-async function deleteItem(i) {
-    if (!confirm("Excluir?")) return;
-
-    data[currentTab].splice(i,1);
-    render();
-    await saveToCloud();
+// =====================
+async function deleteItem(index) {
+    if (confirm("Deseja excluir permanentemente?")) {
+        data[currentTab].splice(index, 1);
+        render();
+        await saveToCloud();
+    }
 }
 
+// =====================
+// FORMAT
+// =====================
+function formatText(text) {
+    if (!text) return "";
+
+    return text.replace(/\*(.*?)\*/g, '<mark>$1</mark>');
+}
+
+// =====================
 // COPY
-function copyText(i){
-    navigator.clipboard.writeText(data[currentTab][i].t);
+// =====================
+function copyText(btn, index) {
+    const rawText = data[currentTab][index].t.replace(/\*/g, '');
+
+    navigator.clipboard.writeText(rawText).then(() => {
+        const originalText = btn.innerText;
+        btn.innerText = "COPIADO";
+        setTimeout(() => btn.innerText = originalText, 800);
+    });
 }
 
+// =====================
 // INIT
+// =====================
 loadFromCloud();
 setInterval(loadFromCloud, 10000);
 
