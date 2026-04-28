@@ -1,157 +1,11 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-<meta charset="UTF-8">
-<title>Gerenciador Logístico Pro - TRANSLIMA</title>
-
-<style>
-:root { 
-    --primary: #3498db; 
-    --danger: #e74c3c; 
-    --success: #27ae60; 
-    --bg: #f4f4f9; 
-    --highlight: #fff3cd; 
-    --done: #00FF00; 
-}
-
-/* NF */
-.item-card.invoiced {
-    background: #d0ebff !important;
-    border-color: #74c0fc;
-}
-
-.btn-nf {
-    background: #1971c2;
-    color: white;
-    border: none;
-    padding: 7px 14px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: bold;
-}
-
-body, html { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); overflow: hidden; }
-
-.container { 
-    max-width: 950px; 
-    margin: 20px auto; 
-    background: white; 
-    padding: 20px; 
-    border-radius: 12px; 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-    display: flex; 
-    flex-direction: column;
-    height: 85vh; 
-}
-
-h2 { margin-top: 0; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-
-.tabs { display: flex; gap: 5px; margin-bottom: 15px; background: #eee; padding: 5px; border-radius: 8px; flex-shrink: 0; }
-
-.tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; border-radius: 6px; font-weight: bold; transition: 0.3s; color: #555; }
-
-.tab.active { background: var(--primary); color: white; }
-
-.list-container { flex-grow: 1; overflow-y: auto; padding: 10px; background: #fff; border: 1px solid #f0f0f0; border-radius: 6px; }
-
-.item-card { 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    background: white; 
-    border: 1px solid #ddd; 
-    padding: 12px; 
-    margin-bottom: 10px; 
-    border-radius: 6px; 
-}
-
-.item-card.completed { background-color: var(--done) !important; }
-
-.item-text { flex-grow: 1; cursor: pointer; font-size: 14px; color: #333; word-break: break-word; }
-
-mark { background-color: var(--highlight); }
-
-.actions { display: flex; gap: 10px; align-items: center; margin-left: 15px; }
-
-.btn-del { color: var(--danger); font-weight: bold; cursor: pointer; border: none; background: none; font-size: 22px; }
-
-.btn-copy { background: var(--success); color: white; border: none; padding: 7px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
-
-</style>
-</head>
-
-<body>
-
-<div class="container">
-<h2>📋 Painel de Cargas</h2>
-
-<div class="tabs">
-<div id="tab-pesos" class="tab active" onclick="switchTab('pesos')">Pesos/Cargas</div>
-<div id="tab-cte" class="tab" onclick="switchTab('cte')">Regras CT-e</div>
-<div id="tab-clientes" class="tab" onclick="switchTab('clientes')">Clientes</div>
-</div>
-
-<div id="list" class="list-container">Carregando...</div>
-</div>
-
-<button onclick="addItem()">+</button>
-
-<script>
-
-// SUPABASE
-const SB_URL = 'https://wzinlkuvktzpajkdgohq.supabase.co';
-const SB_KEY = 'SUA_KEY_AQUI';
-const URL = `${SB_URL}/rest/v1/painel?id=eq.1`;
-
-let currentTab = 'pesos';
-let data = { pesos: [], cte: [], clientes: [] };
-
-// LOAD
-async function loadFromCloud() {
-    const res = await fetch(URL, {
-        headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` }
-    });
-
-    const json = await res.json();
-    if (json?.length) {
-        data = json[0].dados;
-        render();
-    }
-}
-
-// SAVE
-async function saveToCloud() {
-    await fetch(URL, {
-        method: 'PATCH',
-        headers: {
-            apikey: SB_KEY,
-            Authorization: `Bearer ${SB_KEY}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ dados: data })
-    });
-}
-
-// FORMAT (original + destaque cliente)
-function formatText(text) {
-    if (!text) return "";
-
-    text = text.replace(/\*(.*?)\*/g, '<mark>$1</mark>');
-
-    text = text.replace(/CS3|RUGRAN|RG GRANITOS/gi, m => {
-        return `<span style="background:#ffe066;padding:2px 5px;border-radius:4px;font-weight:bold">${m}</span>`;
-    });
-
-    return text;
-}
-
-// RENDER ORIGINAL
 function render() {
-    const list = document.getElementById('list');
-    list.innerHTML = '';
+    const listElement = document.getElementById('list');
+    listElement.innerHTML = '';
 
-    if (!data[currentTab]) return;
+    if (!data[currentTab] || data[currentTab].length === 0) {
+        listElement.innerHTML = '<p style="text-align:center; color:#999;">Aba vazia</p>';
+        return;
+    }
 
     data[currentTab].forEach((item, index) => {
 
@@ -165,20 +19,39 @@ function render() {
             </div>
 
             <div class="actions">
+
                 <button class="btn-nf" onclick="toggleNF(${index})">
                     ${item.nf ? 'NF OK' : 'NF'}
                 </button>
 
-                <button class="btn-copy" onclick="copyText(${index})">Copiar</button>
+                <button class="btn-copy" onclick="copyText(this, ${index})">Copiar</button>
                 <button class="btn-del" onclick="deleteItem(${index})">&times;</button>
+
             </div>
         `;
 
-        list.appendChild(card);
+        listElement.appendChild(card);
     });
 }
 
-// NF TOGGLE
+// DONE
+async function toggleDone(index) {
+    data[currentTab][index].d = !data[currentTab][index].d;
+    render();
+    await saveToCloud();
+}
+
+// TAB
+function switchTab(tab) {
+    currentTab = tab;
+
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+
+    render();
+}
+
+// NF
 async function toggleNF(index) {
     data[currentTab][index].nf = !data[currentTab][index].nf;
     render();
@@ -187,7 +60,7 @@ async function toggleNF(index) {
 
 // ADD
 async function addItem() {
-    const text = prompt("Digite:");
+    const text = prompt("Digite a nova informação:");
     if (text) {
         data[currentTab].push({ t: text, d: false, nf: false });
         render();
@@ -196,40 +69,50 @@ async function addItem() {
 }
 
 // EDIT
-async function editItem(i) {
-    const t = prompt("Editar:", data[currentTab][i].t);
-    if (t) {
-        data[currentTab][i].t = t;
+async function editItem(index) {
+    const oldText = data[currentTab][index].t;
+    const newText = prompt("Editar informação:", oldText);
+
+    if (newText !== null && newText !== "") {
+        data[currentTab][index].t = newText;
         render();
         await saveToCloud();
     }
 }
 
 // DELETE
-async function deleteItem(i) {
-    if (confirm("Excluir?")) {
-        data[currentTab].splice(i, 1);
+async function deleteItem(index) {
+    if (confirm("Deseja excluir permanentemente?")) {
+        data[currentTab].splice(index, 1);
         render();
         await saveToCloud();
     }
 }
 
-// COPY
-function copyText(i) {
-    navigator.clipboard.writeText(data[currentTab][i].t);
+// FORMAT
+function formatText(text) {
+    if (!text) return "";
+
+    text = text.replace(/\*(.*?)\*/g, '<mark>$1</mark>');
+
+    text = text.replace(/CS3|RUGRAN|RG GRANITOS/gi, (m) => {
+        return `<span style="background:#ffe066;padding:2px 5px;border-radius:4px;font-weight:bold">${m}</span>`;
+    });
+
+    return text;
 }
 
-// TAB
-function switchTab(tab) {
-    currentTab = tab;
-    render();
+// COPY
+function copyText(btn, index) {
+    const rawText = data[currentTab][index].t.replace(/\*/g, '');
+
+    navigator.clipboard.writeText(rawText).then(() => {
+        const originalText = btn.innerText;
+        btn.innerText = "COPIADO";
+        setTimeout(() => btn.innerText = originalText, 800);
+    });
 }
 
 // INIT
 loadFromCloud();
 setInterval(loadFromCloud, 10000);
-
-</script>
-
-</body>
-</html>
