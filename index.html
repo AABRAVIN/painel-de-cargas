@@ -135,32 +135,35 @@ let data = { pesos: [], cte: [], clientes: [] };
 // LOAD
 // =====================
 async function loadFromCloud() {
-    const status = document.getElementById('status-cloud');
-    status.innerText = "☁️ Conectando...";
-
     try {
         const res = await fetch(URL_BANCO, {
+            method: 'GET',
             headers: {
-                apikey: SB_KEY,
-                Authorization: `Bearer ${SB_KEY}`
+                'apikey': SB_KEY,
+                'Authorization': 'Bearer ' + SB_KEY,
+                'Content-Type': 'application/json'
             }
         });
 
-        if (!res.ok) throw new Error("Erro na API");
+        if (!res.ok) {
+            console.error('Erro HTTP:', res.status);
+            document.getElementById('status-cloud').innerText = '❌ Erro conexão';
+            return;
+        }
 
         const json = await res.json();
 
         if (json?.length) {
-            data = json[0].dados;
+            data = json[0].dados || data;
             render();
-            status.innerText = "✅ Conectado";
+            document.getElementById('status-cloud').innerText = '✅ Conectado';
         } else {
-            status.innerText = "⚠️ Sem dados";
+            document.getElementById('status-cloud').innerText = '⚠️ Sem dados';
         }
 
     } catch (err) {
-        console.error(err);
-        status.innerText = "❌ Erro conexão";
+        console.error('Erro geral:', err);
+        document.getElementById('status-cloud').innerText = '❌ Falha conexão';
     }
 }
 
@@ -168,15 +171,21 @@ async function loadFromCloud() {
 // SAVE
 // =====================
 async function saveToCloud() {
-    await fetch(URL_BANCO, {
-        method: 'PATCH',
-        headers: {
-            apikey: SB_KEY,
-            Authorization: `Bearer ${SB_KEY}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ dados: data })
-    });
+    try {
+        await fetch(URL_BANCO, {
+            method: 'PATCH',
+            headers: {
+                'apikey': SB_KEY,
+                'Authorization': 'Bearer ' + SB_KEY,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({ dados: data })
+        });
+
+    } catch (err) {
+        console.error('Erro ao salvar:', err);
+    }
 }
 
 // =====================
