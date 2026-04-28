@@ -1,231 +1,220 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <title>Gerenciador Logístico Pro - TRANSLIMA</title>
-    <style>
-        :root { 
-            --primary: #3498db; 
-            --danger: #e74c3c; 
-            --success: #27ae60; 
-            --bg: #f4f4f9; 
-            --highlight: #fff3cd; 
-            --done: #00FF00; 
-        }
-        
-        body, html { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); overflow: hidden; }
-        
-        .container { 
-            max-width: 950px; 
-            margin: 20px auto; 
-            background: white; 
-            padding: 20px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-            display: flex; 
-            flex-direction: column;
-            height: 85vh; 
-        }
-        
-        h2 { margin-top: 0; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-        #status-cloud { font-size: 12px; color: #888; font-weight: normal; }
+<meta charset="UTF-8">
+<title>Gerenciador Logístico Pro - TRANSLIMA</title>
 
-        .tabs { display: flex; gap: 5px; margin-bottom: 15px; background: #eee; padding: 5px; border-radius: 8px; flex-shrink: 0; }
-        .tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; border-radius: 6px; font-weight: bold; transition: 0.3s; color: #555; }
-        .tab.active { background: var(--primary); color: white; }
+<style>
+:root { 
+    --primary: #3498db; 
+    --danger: #e74c3c; 
+    --success: #27ae60; 
+    --bg: #f4f4f9; 
+    --highlight: #fff3cd; 
+    --done: #00FF00; 
+}
 
-        .list-container { 
-            flex-grow: 1; 
-            overflow-y: auto; 
-            padding: 10px;
-            background: #fff;
-            border: 1px solid #f0f0f0;
-            border-radius: 6px;
-        }
+/* NF */
+.item-card.invoiced {
+    background: #d0ebff !important;
+    border-color: #74c0fc;
+}
 
-        .item-card { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            background: white; 
-            border: 1px solid #ddd; 
-            padding: 12px; 
-            margin-bottom: 10px; 
-            border-radius: 6px; 
-        }
-        
-        .item-card.completed { 
-            background-color: var(--done) !important; 
-            border-color: #00cc00; 
-        }
-        .item-card.completed .item-text { font-weight: bold; color: black; }
+body, html { 
+    height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); overflow: hidden; 
+}
 
-        .item-text { flex-grow: 1; cursor: pointer; line-height: 1.5; font-size: 14px; color: #333; word-break: break-word; }
-        mark { background-color: var(--highlight); color: #856404; padding: 2px 4px; border-radius: 3px; font-weight: bold; }
+.container { 
+    max-width: 950px; margin: 20px auto; background: white; padding: 20px;
+    border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    display: flex; flex-direction: column; height: 85vh; 
+}
 
-        .actions { display: flex; gap: 10px; align-items: center; margin-left: 15px; }
-        .check-done { width: 22px; height: 22px; cursor: pointer; margin-right: 12px; accent-color: var(--success); }
+h2 { margin-top: 0; display:flex; justify-content:space-between; }
 
-        .btn-del { color: var(--danger); font-weight: bold; cursor: pointer; border: none; background: none; font-size: 22px; }
-        .btn-copy { background: var(--success); color: white; border: none; padding: 7px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
+.tabs { display:flex; gap:5px; margin-bottom:15px; background:#eee; padding:5px; border-radius:8px; }
 
-        .footer-info { font-size: 0.85em; color: #777; margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; }
-        .fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 35px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; z-index: 100; }
-    </style>
+.tab { flex:1; padding:12px; text-align:center; cursor:pointer; font-weight:bold; }
+
+.tab.active { background: var(--primary); color:white; }
+
+.list-container { flex-grow:1; overflow-y:auto; padding:10px; background:#fff; }
+
+.item-card { 
+    display:flex; justify-content:space-between; align-items:center;
+    border:1px solid #ddd; padding:12px; margin-bottom:10px; border-radius:6px;
+}
+
+.item-card.completed { background: var(--done) !important; }
+
+.item-text { flex-grow:1; cursor:pointer; }
+
+mark { background: var(--highlight); }
+
+.btn-del { color:var(--danger); background:none; border:none; font-size:20px; cursor:pointer; }
+
+.btn-copy { background:var(--success); color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; }
+
+.btn-nf {
+    background:#1971c2;
+    color:white;
+    border:none;
+    padding:6px 10px;
+    border-radius:4px;
+    cursor:pointer;
+}
+
+</style>
 </head>
+
 <body>
 
 <div class="container">
-    <h2>
-        <span>📋 Painel de Cargas</span>
-        <span id="status-cloud">☁️ Conectando...</span>
-    </h2>
-    
-    <div class="tabs">
-        <div id="tab-pesos" class="tab active" onclick="switchTab('pesos')">Pesos/Cargas</div>
-        <div id="tab-cte" class="tab" onclick="switchTab('cte')">Regras CT-e</div>
-        <div id="tab-clientes" class="tab" onclick="switchTab('clientes')">Clientes</div>
-    </div>
+<h2>📋 Painel de Cargas <span id="status-cloud">☁️</span></h2>
 
-    <div id="list" class="list-container">Carregando dados...</div>
-
-    <div class="footer-info">
-        💡 <b>Uso:</b> Digite no "+" para salvar. As mudanças aparecem para todos que usam o link.
-    </div>
+<div class="tabs">
+<div class="tab active" onclick="switchTab('pesos')">Pesos</div>
+<div class="tab" onclick="switchTab('cte')">CT-e</div>
+<div class="tab" onclick="switchTab('clientes')">Clientes</div>
 </div>
 
-<button class="fab" onclick="addItem()">+</button>
+<div id="list" class="list-container"></div>
+</div>
+
+<button onclick="addItem()">+</button>
 
 <script>
-    // === CONFIGURAÇÃO SUPABASE DA TRANSLIMA ===
-    const SB_URL = 'https://wzinlkuvktzpajkdgohq.supabase.co';
-    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6aW5sa3V2a3R6cGFqa2Rnb2hxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4NzY0MDAsImV4cCI6MjA5MjQ1MjQwMH0.01SLd70weP8VqoZ9HWHcWRpkD74s_wBIhKhjKFaZ34k';
-    const URL_BANCO = `${SB_URL}/rest/v1/painel?id=eq.1`;
 
-    let currentTab = 'pesos';
-    let data = { pesos: [], cte: [], clientes: [] };
+// SUPABASE
+const SB_URL = 'https://wzinlkuvktzpajkdgohq.supabase.co';
+const SB_KEY = 'SUA_KEY_AQUI';
+const URL = `${SB_URL}/rest/v1/painel?id=eq.1`;
 
-    async function loadFromCloud() {
-        try {
-            const res = await fetch(URL_BANCO, {
-                headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}` }
-            });
-            const json = await res.json();
-            if (json && json.length > 0) {
-                data = json[0].dados;
-                document.getElementById('status-cloud').innerText = '✅ Sincronizado';
-                render();
-            }
-        } catch (e) {
-            document.getElementById('status-cloud').innerText = '❌ Erro de Conexão';
-        }
+let currentTab = 'pesos';
+let data = { pesos: [], cte: [], clientes: [] };
+
+// LOAD
+async function loadFromCloud() {
+    const res = await fetch(URL, {
+        headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` }
+    });
+
+    const json = await res.json();
+    if (json?.length) {
+        data = json[0].dados;
+        render();
     }
+}
 
-    async function saveToCloud() {
-        document.getElementById('status-cloud').innerText = '☁️ Salvando...';
-        try {
-            await fetch(URL_BANCO, {
-                method: 'PATCH',
-                headers: {
-                    "apikey": SB_KEY,
-                    "Authorization": `Bearer ${SB_KEY}`,
-                    "Content-Type": "application/json",
-                    "Prefer": "return=minimal"
-                },
-                body: JSON.stringify({ dados: data })
-            });
-            document.getElementById('status-cloud').innerText = '✅ Salvo!';
-        } catch (e) {
-            document.getElementById('status-cloud').innerText = '❌ Erro ao salvar';
-        }
-    }
+// SAVE
+async function saveToCloud() {
+    await fetch(URL, {
+        method: 'PATCH',
+        headers: {
+            apikey: SB_KEY,
+            Authorization: `Bearer ${SB_KEY}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ dados: data })
+    });
+}
 
-    function formatText(text) {
-        return text ? text.replace(/\*(.*?)\*/g, '<mark>$1</mark>') : "";
-    }
+// FORMAT
+function formatText(text) {
+    if (!text) return "";
 
-    function render() {
-        const listElement = document.getElementById('list');
-        listElement.innerHTML = '';
-        
-        if (!data[currentTab] || data[currentTab].length === 0) {
-            listElement.innerHTML = '<p style="text-align:center; color:#999; margin-top:50px;">Aba vazia. Use o "+" para adicionar.</p>';
-            return;
-        }
+    text = text.replace(/\*(.*?)\*/g, '<mark>$1</mark>');
 
-        data[currentTab].forEach((item, index) => {
-            const card = document.createElement('div');
-            card.className = `item-card ${item.d ? 'completed' : ''}`;
-            
-            const checkBtn = currentTab === 'clientes' 
-                ? `<input type="checkbox" class="check-done" ${item.d ? 'checked' : ''} onclick="toggleDone(${index})">` 
-                : '';
+    text = text.replace(/CS3|RUGRAN|RG GRANITOS/gi, m => {
+        return `<span style="background:#ffe066;padding:2px 5px;border-radius:4px;font-weight:bold">${m}</span>`;
+    });
 
-            card.innerHTML = `
-                ${checkBtn}
-                <div class="item-text" onclick="editItem(${index})">${formatText(item.t)}</div>
-                <div class="actions">
-                    <button class="btn-copy" onclick="copyText(this, ${index})">Copiar</button>
-                    <button class="btn-del" onclick="deleteItem(${index})">&times;</button>
-                </div>
-            `;
-            listElement.appendChild(card);
-        });
-    }
+    return text;
+}
 
-    async function toggleDone(index) {
-        data[currentTab][index].d = !data[currentTab][index].d;
+// RENDER
+function render() {
+    const list = document.getElementById('list');
+    list.innerHTML = '';
+
+    if (!data[currentTab]) return;
+
+    data[currentTab].forEach((item, i) => {
+        const div = document.createElement('div');
+
+        div.className = `item-card ${item.d ? 'completed' : ''} ${item.nf ? 'invoiced' : ''}`;
+
+        div.innerHTML = `
+            <div class="item-text" onclick="editItem(${i})">
+                ${formatText(item.t)}
+            </div>
+
+            <div style="display:flex; gap:5px;">
+                <button class="btn-nf" onclick="toggleNF(${i})">
+                    ${item.nf ? 'NF OK' : 'NF'}
+                </button>
+
+                <button class="btn-copy" onclick="copyText(${i})">Copiar</button>
+
+                <button class="btn-del" onclick="deleteItem(${i})">&times;</button>
+            </div>
+        `;
+
+        list.appendChild(div);
+    });
+}
+
+// NF
+async function toggleNF(i) {
+    data[currentTab][i].nf = !data[currentTab][i].nf;
+    render();
+    await saveToCloud();
+}
+
+// ADD
+async function addItem() {
+    const text = prompt("Digite:");
+    if (text) {
+        data[currentTab].push({ t: text, d: false, nf: false });
         render();
         await saveToCloud();
     }
+}
 
-    function switchTab(tab) {
-        currentTab = tab;
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.getElementById('tab-' + tab).classList.add('active');
+// EDIT
+async function editItem(i) {
+    const t = prompt("Editar:", data[currentTab][i].t);
+    if (t) {
+        data[currentTab][i].t = t;
         render();
+        await saveToCloud();
     }
+}
 
-    async function addItem() {
-        const text = prompt("Digite a nova informação:");
-        if (text) {
-            data[currentTab].push({ t: text, d: false });
-            render();
-            await saveToCloud();
-        }
+// DELETE
+async function deleteItem(i) {
+    if (confirm("Excluir?")) {
+        data[currentTab].splice(i,1);
+        render();
+        await saveToCloud();
     }
+}
 
-    async function editItem(index) {
-        const oldText = data[currentTab][index].t;
-        const newText = prompt("Editar informação:", oldText);
-        if (newText !== null && newText !== "") {
-            data[currentTab][index].t = newText;
-            render();
-            await saveToCloud();
-        }
-    }
+// COPY
+function copyText(i) {
+    navigator.clipboard.writeText(data[currentTab][i].t);
+}
 
-    async function deleteItem(index) {
-        if (confirm("Deseja excluir permanentemente?")) {
-            data[currentTab].splice(index, 1);
-            render();
-            await saveToCloud();
-        }
-    }
+// TAB
+function switchTab(tab) {
+    currentTab = tab;
+    render();
+}
 
-    function copyText(btn, index) {
-        const rawText = data[currentTab][index].t.replace(/\*/g, '');
-        navigator.clipboard.writeText(rawText).then(() => {
-            const originalText = btn.innerText;
-            btn.innerText = "COPIADO";
-            setTimeout(() => btn.innerText = originalText, 800);
-        });
-    }
+// INIT
+loadFromCloud();
+setInterval(loadFromCloud, 10000);
 
-    // Início automático
-    loadFromCloud();
-    // Atualiza sozinho a cada 10 segundos
-    setInterval(loadFromCloud, 10000);
 </script>
 
 </body>
