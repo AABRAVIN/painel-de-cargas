@@ -28,6 +28,8 @@ body, html { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; backg
     height: 85vh; 
 }
 
+h2 { margin-top: 0; display:flex; justify-content:space-between; }
+
 .tabs { display: flex; gap: 5px; margin-bottom: 15px; background: #eee; padding: 5px; border-radius: 8px; }
 
 .tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; font-weight: bold; }
@@ -38,8 +40,9 @@ body, html { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; backg
 
 .item-card { display:flex; justify-content:space-between; align-items:center; border:1px solid #ddd; padding:12px; margin-bottom:10px; border-radius:6px; }
 
-.item-card.completed { background: var(--done) !important; }
-.item-card.invoiced { background: #d0ebff !important; }
+.item-card.completed { background-color: var(--done) !important; }
+.item-card.invoiced { background:#d0ebff !important; }
+.item-card.finalizado { background:#d3f9d8 !important; }
 
 .item-text { flex-grow:1; cursor:pointer; }
 
@@ -51,84 +54,93 @@ body, html { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; backg
 <body>
 
 <div class="container">
+
+<h2>
+<span>📋 Painel de Cargas</span>
+<span id="status-cloud">☁️ Conectando...</span>
+</h2>
+
 <div class="tabs">
-<div id="tab-pesos" class="tab active" onclick="switchTab('pesos')">Pesos</div>
-<div id="tab-cte" class="tab" onclick="switchTab('cte')">CTE</div>
+<div id="tab-pesos" class="tab active" onclick="switchTab('pesos')">Pesos/Cargas</div>
+<div id="tab-cte" class="tab" onclick="switchTab('cte')">Regras CT-e</div>
 <div id="tab-clientes" class="tab" onclick="switchTab('clientes')">Clientes</div>
 </div>
 
-<div id="list" class="list-container"></div>
+<div id="list" class="list-container">Carregando dados...</div>
+
 </div>
 
 <button onclick="addItem()">+</button>
 
 <script>
 
+// CONFIG
 const SB_URL = 'https://wzinlkuvktzpajkdgohq.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
-const URL = `${SB_URL}/rest/v1/painel?id=eq.1`;
+const SB_KEY = 'SUA_KEY_AQUI';
+const URL_BANCO = `${SB_URL}/rest/v1/painel?id=eq.1`;
 
 let currentTab = 'pesos';
 let data = { pesos: [], cte: [], clientes: [] };
 
 // LOAD
 async function loadFromCloud() {
-    try {
-        const res = await fetch(URL_BANCO, {
-            headers: {
-                apikey: SB_KEY,
-                Authorization: `Bearer ${SB_KEY}`
-            }
-        });
-
-        const json = await res.json();
-
-        if (json?.length) {
-            data = json[0].dados;
-            document.getElementById('status-cloud').innerText = '✅ OK';
-            render();
-        } else {
-            document.getElementById('status-cloud').innerText = '⚠️ Vazio';
-        }
-
-    } catch (e) {
-        document.getElementById('status-cloud').innerText = '❌ Erro';
-        console.error(e);
+    const res = await fetch(URL_BANCO, {
+        headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` }
+    });
+    const json = await res.json();
+    if (json?.length) {
+        data = json[0].dados;
+        render();
     }
 }
 
 // SAVE
-async function saveToCloud(){
-    await fetch(URL,{
-        method:'PATCH',
-        headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`,'Content-Type':'application/json'},
-        body:JSON.stringify({dados:data})
+async function saveToCloud() {
+    await fetch(URL_BANCO, {
+        method: 'PATCH',
+        headers: {
+            apikey: SB_KEY,
+            Authorization: `Bearer ${SB_KEY}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ dados: data })
     });
 }
 
 // RENDER
-function render(){
-    const list=document.getElementById('list');
-    list.innerHTML='';
+function render() {
+    const listElement = document.getElementById('list');
+    listElement.innerHTML = '';
 
-    (data[currentTab]||[]).forEach((item,index)=>{
+    if (!data[currentTab]) return;
 
-        const card=document.createElement('div');
-        card.className=`item-card ${item.d?'completed':''} ${item.nf?'invoiced':''}`;
+    data[currentTab].forEach((item, index) => {
 
-        card.innerHTML=`
+        const card = document.createElement('div');
+
+        card.className = `item-card 
+            ${item.d ? 'completed' : ''} 
+            ${item.nf ? 'invoiced' : ''} 
+            ${item.f ? 'finalizado' : ''}`;
+
+        const checkBtn = currentTab === 'clientes'
+            ? `<input type="checkbox" ${item.d ? 'checked' : ''} onclick="toggleDone(${index})">`
+            : '';
+
+        card.innerHTML = `
+            ${checkBtn}
             <div class="item-text" onclick="editItem(${index})">${formatText(item.t)}</div>
 
             <div class="actions">
 
-                <button onclick="copyText(this,${index})">Copiar</button>
+                <button onclick="copyText(this, ${index})">Copiar</button>
 
                 <button onclick="toggleNF(${index})">
-                    ${item.nf?'NF OK':'NF'}
+                    ${item.nf ? 'NF OK' : 'NF'}
                 </button>
 
                 <button onclick="toggleFinalizado(${index})">
-                    ${item.f?'FINALIZADA':'FINALIZAR'}
+                    ${item.f ? 'FINALIZADA' : 'FINALIZAR'}
                 </button>
 
                 <button onclick="deleteItem(${index})">×</button>
@@ -136,77 +148,89 @@ function render(){
             </div>
         `;
 
-        list.appendChild(card);
+        listElement.appendChild(card);
     });
 }
 
-// TOGGLES
-async function toggleNF(i){
-    data[currentTab][i].nf=!data[currentTab][i].nf;
-    render(); await saveToCloud();
+// NOVO: FINALIZADO
+async function toggleFinalizado(index) {
+    data[currentTab][index].f = !data[currentTab][index].f;
+    render();
+    await saveToCloud();
 }
 
-async function toggleFinalizado(i){
-    data[currentTab][i].f=!data[currentTab][i].f;
-    render(); await saveToCloud();
+// RESTO ORIGINAL
+async function toggleDone(index) {
+    data[currentTab][index].d = !data[currentTab][index].d;
+    render();
+    await saveToCloud();
 }
 
-// TAB
-function switchTab(tab){
-    currentTab=tab;
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-    document.getElementById('tab-'+tab).classList.add('active');
+function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
     render();
 }
 
-// ADD
-async function addItem(){
-    const text=prompt("Digite:");
-    if(text){
-        data[currentTab].push({t:text,d:false,nf:false,f:false});
-        render(); await saveToCloud();
+async function toggleNF(index) {
+    data[currentTab][index].nf = !data[currentTab][index].nf;
+    render();
+    await saveToCloud();
+}
+
+async function addItem() {
+    const text = prompt("Digite a nova informação:");
+    if (text) {
+        data[currentTab].push({ t: text, d: false, nf: false, f: false });
+        render();
+        await saveToCloud();
     }
 }
 
-// EDIT
-async function editItem(i){
-    const n=prompt("Editar:",data[currentTab][i].t);
-    if(n){ data[currentTab][i].t=n; render(); await saveToCloud(); }
-}
-
-// DELETE
-async function deleteItem(i){
-    if(confirm("Excluir?")){
-        data[currentTab].splice(i,1);
-        render(); await saveToCloud();
+async function editItem(index) {
+    const oldText = data[currentTab][index].t;
+    const newText = prompt("Editar informação:", oldText);
+    if (newText !== null && newText !== "") {
+        data[currentTab][index].t = newText;
+        render();
+        await saveToCloud();
     }
 }
 
-// FORMAT INTELIGENTE
-function formatText(text){
-    if(!text) return "";
+async function deleteItem(index) {
+    if (confirm("Deseja excluir permanentemente?")) {
+        data[currentTab].splice(index, 1);
+        render();
+        await saveToCloud();
+    }
+}
 
-    text=text.replace(/\*(.*?)\*/g,'<mark>$1</mark>');
+// NOVO: FORMAT INTELIGENTE
+function formatText(text) {
+    if (!text) return "";
 
-    text=text.replace(/Fornecedor:\s*([^\n]+)/gi,(f,g)=>{
-        return "Fornecedor: "+g.split('+').map(p=>`<b>${p.trim()}</b>`).join(' + ');
+    text = text.replace(/\*(.*?)\*/g, '<mark>$1</mark>');
+
+    text = text.replace(/Fornecedor:\s*([^\n]+)/gi, (f, g) => {
+        return "Fornecedor: " + g.split('+').map(p => `<b>${p.trim()}</b>`).join(' + ');
     });
 
-    text=text.replace(/Cliente:\s*([^\n]+)/gi,(f,g)=>{
+    text = text.replace(/Cliente:\s*([^\n]+)/gi, (f, g) => {
         return `Cliente: <b>${g}</b>`;
     });
 
     return text;
 }
 
-// COPY
-function copyText(btn,i){
-    navigator.clipboard.writeText(data[currentTab][i].t);
+function copyText(btn, index) {
+    const rawText = data[currentTab][index].t.replace(/\*/g, '');
+    navigator.clipboard.writeText(rawText);
 }
 
 // INIT
 loadFromCloud();
-setInterval(loadFromCloud,10000);
+setInterval(loadFromCloud, 10000);
 
 </script>
 
