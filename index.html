@@ -157,26 +157,21 @@ function render() {
 
         const card = document.createElement('div');
 
-        card.className = `item-card ${item.d ? 'completed' : ''} ${item.nf ? 'invoiced' : ''}`;
+        card.className = `item-card ${item.d ? 'completed' : ''}`;
 
         const checkBtn = currentTab === 'clientes'
-            ? `<input type="checkbox" class="check-done" ${item.d ? 'checked' : ''} onclick="toggleDone(${index})">`
+            ? `<input type="checkbox" ${item.d ? 'checked' : ''} onclick="toggleDone(${index})">`
             : '';
 
         card.innerHTML = `
             ${checkBtn}
-            <div class="item-text" onclick="editItem(${index})">${formatText(item.t)}</div>
+            <div class="item-text" onclick="editItem(${index})">
+                ${formatText(item.t)}
+            </div>
 
             <div class="actions">
-
                 <button class="btn-copy" onclick="copyText(this, ${index})">Copiar</button>
-
-                <button class="btn-copy" onclick="toggleNF(${index})">
-                    ${item.nf ? 'NF OK' : 'NF'}
-                </button>
-
                 <button class="btn-del" onclick="deleteItem(${index})">&times;</button>
-
             </div>
         `;
 
