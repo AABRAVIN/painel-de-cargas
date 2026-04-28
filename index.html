@@ -80,7 +80,21 @@
         .btn-del { color: var(--danger); font-weight: bold; cursor: pointer; border: none; background: none; font-size: 22px; }
 
         .btn-copy { background: var(--success); color: white; border: none; padding: 7px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
-
+ #btn-add {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    border: none;
+    background: var(--primary);
+    color: white;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
     </style>
 </head>
 
@@ -103,7 +117,7 @@
 
 </div>
 
-<button onclick="addItem()">+</button>
+<button id="btn-add" onclick="addItem()">+</button>
 
 <script>
 
