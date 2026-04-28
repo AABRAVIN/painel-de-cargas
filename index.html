@@ -135,17 +135,32 @@ let data = { pesos: [], cte: [], clientes: [] };
 // LOAD
 // =====================
 async function loadFromCloud() {
-    const res = await fetch(URL_BANCO, {
-        headers: {
-            apikey: SB_KEY,
-            Authorization: `Bearer ${SB_KEY}`
-        }
-    });
+    const status = document.getElementById('status-cloud');
+    status.innerText = "☁️ Conectando...";
 
-    const json = await res.json();
-    if (json?.length) {
-        data = json[0].dados;
-        render();
+    try {
+        const res = await fetch(URL_BANCO, {
+            headers: {
+                apikey: SB_KEY,
+                Authorization: `Bearer ${SB_KEY}`
+            }
+        });
+
+        if (!res.ok) throw new Error("Erro na API");
+
+        const json = await res.json();
+
+        if (json?.length) {
+            data = json[0].dados;
+            render();
+            status.innerText = "✅ Conectado";
+        } else {
+            status.innerText = "⚠️ Sem dados";
+        }
+
+    } catch (err) {
+        console.error(err);
+        status.innerText = "❌ Erro conexão";
     }
 }
 
